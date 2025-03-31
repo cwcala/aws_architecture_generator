@@ -1,0 +1,39 @@
+Aws application architecture diagram generator application 
+
+This web application allows CTO users to generate professional AWS architecture diagrams by simply describing their architecture in natural language.  n
+
+## Architecture Components:
+
+1. **Amazon Route 53**: Provides DNS routing to the application.
+
+2. **Amazon CloudFront**: Delivers the web application content with low latency.
+
+3. **Amazon S3**: Hosts the static frontend assets (HTML, CSS, JavaScript).
+
+4. **AWS Lambda**: Processes user requests and orchestrates the diagram generation workflow.
+
+5. **Amazon API Gateway**: Creates RESTful API endpoints that connect the frontend to Lambda functions.
+
+6. **Amazon Bedrock**: Processes natural language descriptions and generates Python code using Claude 3 Opus or Anthropic's Claude 3 Sonnet.
+
+7. **Amazon SageMaker with Anthropic Claude 3 Sonnet Provides additional LLM capabilities for complex diagram generation.
+
+8. **AWS Lambda (Execution Environment)**: Executes the generated Python code using the Diagrams library to create the architecture diagram.
+
+9. **Amazon S3 (Output Bucket)**: Stores the generated diagram images.
+
+10. **Amazon DynamoDB**: Stores user sessions and diagram history.
+
+11. **Amazon CloudWatch**: Monitors application performance and logs.
+
+##Data Flow:
+
+1. Users access the application through CloudFront, which serves content from S3.
+2. When a CTO submits an architecture description, API Gateway routes the request to Lambda.
+3. Lambda calls Amazon Bedrock to process the natural language and generate Python code using the Diagrams library.
+4. For complex requests, Nova Pro on SageMaker may be used for enhanced code generation.
+5. The generated code is executed in a Lambda environment with the Diagrams library.
+6. The resulting diagram is stored in S3 and returned to the user.
+7. User session data and diagram history are stored in DynamoDB.
+
+This architecture provides a serverless, scalable solution that leverages AWS's AI services to transform natural language descriptions into professional architecture diagrams
