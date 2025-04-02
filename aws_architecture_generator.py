@@ -4,6 +4,10 @@ import os
 import sys
 from pathlib import Path
 
+# Get region and model from environment variables with defaults
+AWS_BEDROCK_REGION = os.environ.get('AWS_BEDROCK_REGION', 'us-east-1')
+AWS_BEDROCK_MODEL = os.environ.get('AWS_BEDROCK_MODEL', 'anthropic.claude-3-sonnet-20240229-v1:0')
+
 def get_user_description():
     """Get user's natural language description of their AWS architecture"""
     print("Please describe your AWS application architecture in natural language.")
@@ -25,11 +29,11 @@ def invoke_bedrock_model(description):
         # Initialize Bedrock runtime client
         bedrock_runtime = boto3.client(
             service_name='bedrock-runtime',
-            region_name='us-east-1'  # Adjust region if needed
+            region_name=AWS_BEDROCK_REGION  # Adjust region if needed
         )
         
-        # Use Claude 3 Sonnet model
-        model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
+        # Use Claude 3 Sonnet model　or some other model
+        model_id = AWS_BEDROCK_MODEL
         
         # Prepare the prompt for Claude
         prompt = f"""
