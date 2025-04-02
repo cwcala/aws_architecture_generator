@@ -98,6 +98,22 @@ def invoke_bedrock_model(description):
             print("Warning: Unexpected response format. Attempting to extract content...")
             generated_text = str(response_body)
         
+        # Extract token usage information
+        input_tokens = response_body.get('usage', {}).get('input_tokens', 0)
+        output_tokens = response_body.get('usage', {}).get('output_tokens', 0)
+        total_tokens = input_tokens + output_tokens
+        
+        # Log token usage
+        print(f"\n=== Token Usage ===")
+        print(f"Input Tokens: {input_tokens}")
+        print(f"Output Tokens: {output_tokens}")
+        print(f"Total Tokens: {total_tokens}")
+        
+        # Optional: Save token usage to a log file
+        with open('bedrock_token_usage.log', 'a') as log_file:
+            import datetime
+            log_file.write(f"{datetime.datetime.now()}: Input Tokens: {input_tokens}, Output Tokens: {output_tokens}, Total Tokens: {total_tokens}\n")
+        
         return generated_text
         
     except Exception as e:
