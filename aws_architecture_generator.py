@@ -58,8 +58,8 @@ def invoke_bedrock_model(description):
         4. Define connections between services and use () around nodes separated by dashes -
         5. Include proper configuration for the diagram (direction, filename, etc.)
         6. Cluster object cannot have link each other
-        7. Use '-' operator only you have an explicit demand
-        8. Check and remove double links expect you have an explicit demand
+        7. Use '-' operator only if you have an explicit demand
+        8. Check and remove double links except when you have an explicit demand
              
         The output should be a complete, runnable Python script that generates a clear and professional AWS architecture diagram.
         """
