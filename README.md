@@ -23,7 +23,7 @@ This tool allows you to describe your AWS application architecture in natural la
 1. Install the required Python packages:
 
 ```bash
-pip install boto3 diagrams
+pip3 install boto3 diagrams
 ```
 
 2. Make sure you have AWS credentials configured with access to Amazon Bedrock. You can configure credentials using:
@@ -40,12 +40,20 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_DEFAULT_REGION=us-east-1
 ```
 
+You can select the Amazon Bedrock model with `AWS_BEDROCK_MODEL` environment variable and the command below to retreive all Foundation Model your AWS Region provide
+
+```bash
+aws bedrock list-foundation-models | jq '.modelSummaries[] | select(.inferenceTypesSupported[] == "ON_DEMAND") | .modelId' 
+```
+
+By default : the script will use `anthropic.claude-3-sonnet-20240229-v1:0`
+
 ## Usage
 
 1. Run the script:
 
 ```bash
-python aws_architecture_generator.py
+python3 aws_architecture_generator.py
 ```
 
 2. Enter your AWS architecture description when prompted. Type 'done' on a new line when finished.
