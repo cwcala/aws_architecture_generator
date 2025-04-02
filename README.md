@@ -40,7 +40,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret_key
 export AWS_DEFAULT_REGION=us-east-1
 ```
 
-You can select the Amazon Bedrock model with `AWS_BEDROCK_MODEL` environment variable and the command below to retreive all Foundation Model your AWS Region provide
+You can select the Amazon Bedrock model with `AWS_BEDROCK_MODEL` environment variable and the command below to retreive all Foundation Models your AWS Region provides
 
 ```bash
 aws bedrock list-foundation-models | jq '.modelSummaries[] | select(.inferenceTypesSupported[] == "ON_DEMAND") | .modelId' 
