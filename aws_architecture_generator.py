@@ -238,7 +238,7 @@ def invoke_bedrock_model(description):
         print("Total Tokens:",token_usage['totalTokens'])
         
         #Optional: Save token usage to a log file
-        with open('bedrock_token_usage.log', 'a') as log_file:
+        with open(f"bedrock_token_usage_{tracking_number}.log", 'a') as log_file:
             import datetime
             log_file.write(f"{datetime.datetime.now()}: Input Tokens: {token_usage['inputTokens']}, Output Tokens: {token_usage['outputTokens']}, Total Tokens: {token_usage['totalTokens']}\n")
         
