@@ -5,7 +5,11 @@ import sys
 import random
 from pathlib import Path
 from botocore.exceptions import ClientError
-
+import importlib
+import pkgutil
+import ast
+import re
+from diagrams import __path__ as diagrams_path
 
 """
 Anthropic Claude 3.7 Sonnet reasoning capability
@@ -282,12 +286,99 @@ def extract_python_code(text):
     # Return the full text if we can't identify code blocks
     return text
 
-def save_diagram_script(code):
+# #####part to fix diagrams imports#########################
+# Cache of all valid class locations: {class_name: full.module.path}
+def build_aws_class_to_module_map():
+    """Scan only AWS diagrams modules to map class names to their correct module paths."""
+    class_to_module = {}
+    for importer, modname, ispkg in pkgutil.walk_packages(path=diagrams_path, prefix="diagrams."):
+        if not modname.startswith("diagrams.aws."):
+            continue # skip non-AWS providers
+        try:
+            module = importlib.import_module(modname)
+            for attr in dir(module):
+                if attr[0].isupper():
+                    # Only map if not already mapped (keeps first-found AWS class)
+                    class_to_module.setdefault(attr, modname)
+        except Exception:
+            continue
+    return class_to_module
+
+def generate_diagram_script() -> str:
+    """Generates a diagrams script with wrong module/class references."""
+    return """from diagrams import Diagram
+from diagrams.aws.compute import EC2, S3 # S3 is from the wrong module
+from diagrams.aws.network import Route53Domain # This doesn't exist
+from diagrams.aws.database import RDS
+
+with Diagram("Example Architecture", direction="LR"):
+dns = Route53Domain("DNS")
+app = EC2("Web App")
+storage = S3("Static Files")
+db = RDS("Database")
+dns >> app >> storage >> db
+"""
+
+def extract_imports(code: str):
+    tree = ast.parse(code)
+    imports = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("diagrams"):
+            for alias in node.names:
+                imports.append((node.module, alias.name))
+    return imports
+
+def validate_and_fix_imports(code: str, class_map: dict):
+    imports = extract_imports(code)
+    code_lines = code.splitlines()
+    replacements = {} # class_name -> (old_module, new_module)
+    usage_corrections = {} # class_name -> corrected_name (if renamed)
+    for module_path, class_name in imports:
+        valid = False
+        try:
+            mod = importlib.import_module(module_path)
+            if hasattr(mod, class_name):
+                print(f"[VALID] {class_name} from {module_path}")
+                valid = True
+        except ModuleNotFoundError:
+            print(f"[INVALID MODULE] {module_path}")
+        except Exception as e:
+            print(f"[ERROR] {module_path}: {str(e)}")
+        if not valid:
+            correct_module = class_map.get(class_name)
+            if correct_module:
+                print(f"[FIX] {class_name} should be imported from {correct_module}")
+                replacements[class_name] = (module_path, correct_module)
+            else:
+                print(f"[UNKNOWN CLASS] {class_name} not found in diagrams.*")
+
+    # Replace imports and usage
+    for i, line in enumerate(code_lines):
+        if line.strip().startswith("from diagrams"):
+            for cls, (old_mod, new_mod) in replacements.items():
+                if f"from {old_mod} import" in line and cls in line:
+                    # Extract all class names in the line
+                    all_classes = re.findall(r'\b\w+\b', line.split("import")[-1])
+                    fixed_classes = [c for c in all_classes if c != cls]
+                    if cls not in fixed_classes:
+                        fixed_classes.append(cls)
+
+                    # Update line to correct module and class list
+                    code_lines[i] = f"from {new_mod} import {', '.join(fixed_classes)}"
+
+    # Replace usages throughout the script
+    full_code = "\n".join(code_lines)
+    for cls, (old_mod, new_mod) in replacements.items():
+        full_code = re.sub(rf'\b{cls}\b', cls, full_code)
+    return full_code, bool(replacements)
+####end section on repairing diagram imports
+
+def save_diagram_script(full_code): #code
     """Save the generated Python script to a file"""
     script_path = f"generated_aws_diagram_{tracking_number}.py"
     
     with open(script_path, "w") as f:
-        f.write(code)
+        f.write(full_code) #code
     
     print(f"\nDiagram script saved to: {script_path}")
     return script_path
@@ -385,14 +476,34 @@ def main():
             f.write(description)
         print(f"\nYour architecture description saved to: {description_path}")
         
+        #step 4.5: check generated code for diagram import errors
+        print("Building diagrams class map (this may take a few seconds)...")
+        class_map = build_aws_class_to_module_map()
+        code = generate_diagram_script()
+        print("\nValidating and auto-correcting...")
+        fixed_code, modified = validate_and_fix_imports(python_code, class_map)
+
+        output_path = Path(f"generated_diagram{tracking_number}.py")
+        output_path.write_text(fixed_code)
+        print(f"\nScript written to {output_path}")
+        if modified:
+            print("One or more imports were corrected.")
+        else:
+            print("All imports and usages were valid.")
+        
         # Step 5: Save the script
-        script_path = save_diagram_script(python_code)
+        #script_path = save_diagram_script(python_code)
         
         # Step 6: Ask if user wants to run the script
-        run_script = input("\nWould you like to run the script to generate the diagram? (y/n): ").lower()
-        if run_script == 'y':
-            run_diagram_script(script_path)
+        #run_script = input("\nWould you like to run the script to generate the diagram? (y/n): ").lower()
+        #if run_script == 'y':
+         #   run_diagram_script(script_path)
         
+        # Step 7: Ask if user wants to run the corrected script
+        run2_script = input("\nWould you like to run the corrected script to generate the diagram? (y/n): ").lower()
+        if run2_script == 'y':
+            run_diagram_script(output_path)
+            
         print("\nDone!")
         
     except KeyboardInterrupt:
