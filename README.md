@@ -23,7 +23,14 @@ This tool allows you to describe your AWS application architecture in natural la
 1. Install the required Python packages:
 
 ```bash
+sudo dnf install git graphviz -y
+git clone https://github.com/cwcala/aws_architecture_generator.git
+cd aws_architecture_generator/
+python3 -m venv venv 
+source venv/bin/activate
 pip3 install boto3 diagrams
+```
+
 ```
 
 2. Make sure you have AWS credentials configured with access to Amazon Bedrock. You can configure credentials using:
@@ -46,14 +53,14 @@ You can select the Amazon Bedrock model with `AWS_BEDROCK_MODEL` environment var
 aws bedrock list-foundation-models | jq '.modelSummaries[] | select(.inferenceTypesSupported[] == "ON_DEMAND") | .modelId' 
 ```
 
-By default : the script will use `anthropic.claude-3-sonnet-20240229-v1:0`
+By default : the script will use `us.anthropic.claude-3-7-sonnet-20250219-v1:0`
 
 ## Usage
 
 1. Run the script:
 
 ```bash
-python3 aws_architecture_generator.py
+python3 aws_architecture_generator.py python3 
 ```
 
 2. Enter your AWS architecture description when prompted. Type 'done' on a new line when finished.
